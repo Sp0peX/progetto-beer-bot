@@ -171,9 +171,8 @@ def filter_beers(beers, preferences):
     return filtered_list, feedback_messages
 
 
-@app.route('/', methods=['GET', 'POST'])
-def index():
-    # ... (stessa logica di prima per GET/POST, fetch, chiamata a filter_beers) ...
+@app.route('/', methods=['GET', 'POST']) # QUESTA È LA ROUTE IMPORTANTE!
+def index(): # Il nome della funzione può essere diverso (es. home, main_page)
     beers_data = []
     suggestions = []
     feedback = []
@@ -181,27 +180,29 @@ def index():
 
     if request.method == 'POST':
         form_data = request.form.to_dict() 
-
+        # ... (la tua logica per il POST come prima) ...
         style_choice = form_data.get('style', 'any')
         beers_data = fetch_beers_from_api(style_choice)
 
         if beers_data:
-            # Pulisci i dati ricevuti: assicurati che ogni "beer" sia un dizionario
             valid_beers_data = [b for b in beers_data if isinstance(b, dict)]
             suggestions, feedback = filter_beers(valid_beers_data, form_data)
-            
+
             if suggestions:
                 if len(suggestions) < 5:
                     pass 
                 else: 
-                    # random.shuffle(suggestions) # Opzionale
-                    suggestions = suggestions[:min(len(suggestions), 7)] # Mostra fino a 7
-            if not suggestions and not feedback: # Se non ci sono suggerimenti e nessun feedback particolare
+                    suggestions = suggestions[:min(len(suggestions), 7)] 
+            if not suggestions and not feedback: 
                 feedback.append("🤔 Non ho trovato birre con i filtri applicabili. Prova a cambiare qualcosa!")
-
-
         else:
             feedback.append("☠️ Ops! Non riesco a parlare con il mio spacciatore di dati sulle birre (API). Riprova tra un po'.")
+
+    # Assicurati che 'index.html' esista nella cartella 'templates'
+    return render_template('index.html', suggestions=suggestions, feedback=feedback, form_data=form_data)
+
+# ... (eventuali altre route se le hai) ...
+
 
     return render_template('index.html', suggestions=suggestions, feedback=feedback, form_data=form_data)
 
