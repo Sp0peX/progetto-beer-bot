@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 /* Importa il font Poppins da Google Fonts (puoi anche metterlo nell' <head> del tuo HTML) */
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
 
@@ -262,3 +263,269 @@ button[type="submit"]:hover {
     }
     .beer-card h3 { font-size: 1.3em; }
 }
+=======
+/* Importa il font Poppins da Google Fonts (puoi anche metterlo nell' <head> del tuo HTML) */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
+
+/* Variabili CSS per una facile personalizzazione dei colori */
+:root {
+    --bg-dark: #1a1a2e;         /* Blu notte scuro per lo sfondo principale */
+    --card-bg: #1f1f38;        /* Blu notte leggermente più chiaro per contenitori e card del form */
+    --element-bg: #2a2a4a;     /* Sfondo per elementi come le card delle birre, per un leggero stacco */
+    --text-light: #e0e0e0;     /* Grigio chiaro per il testo principale */
+    --text-muted: #a0a0c0;     /* Grigio-azzurro per testo secondario o note */
+    --accent-cyan: #00ffff;    /* Ciano/acqua per accenti primari */
+    --accent-magenta: #ff00ff; /* Magenta per accenti secondari */
+    --accent-purple: #9d00ff;  /* Viola acceso per altri accenti o gradienti */
+    --border-color: #3a3a5e;   /* Colore per i bordi */
+}
+
+/* Stili Globali */
+body {
+    font-family: 'Poppins', sans-serif;
+    margin: 0;
+    background-color: var(--bg-dark);
+    color: var(--text-light);
+    line-height: 1.6;
+    font-size: 16px; /* Dimensione base del font */
+}
+
+/* Contenitore Principale */
+.container {
+    max-width: 800px;
+    margin: 30px auto;
+    padding: 25px;
+    background-color: var(--card-bg);
+    border-radius: 12px;
+    box-shadow: 0 0 25px rgba(0, 255, 255, 0.1), 0 0 30px rgba(255, 0, 255, 0.1);
+}
+
+/* Header e Titoli */
+header {
+    text-align: center;
+    margin-bottom: 35px;
+}
+
+header h1 {
+    font-size: 2.8em; /* Leggermente più grande */
+    font-weight: 700;
+    background: linear-gradient(90deg, var(--accent-cyan), var(--accent-magenta));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 0.3em;
+    letter-spacing: 1px; /* Aggiunge un po' di respiro */
+}
+
+header p {
+    font-size: 1.15em;
+    color: var(--text-muted);
+}
+
+/* Stili per il Form */
+.form-group {
+    margin-bottom: 22px;
+}
+
+label {
+    display: block;
+    margin-bottom: 10px; /* Più spazio sotto la label */
+    font-weight: 600;
+    color: var(--accent-cyan);
+    font-size: 1.05em;
+}
+
+select,
+input[type="text"],
+input[type="number"] {
+    width: 100%;
+    padding: 14px; /* Padding leggermente aumentato */
+    background-color: var(--bg-dark); /* Sfondo scuro anche per gli input */
+    border: 1px solid var(--border-color);
+    border-radius: 8px; /* Angoli più arrotondati */
+    box-sizing: border-box;
+    color: var(--text-light);
+    font-size: 1em;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+select:focus,
+input[type="text"]:focus,
+input[type="number"]:focus {
+    outline: none;
+    border-color: var(--accent-magenta);
+    box-shadow: 0 0 12px rgba(255, 0, 255, 0.35);
+}
+
+.input-note {
+    font-size: 0.88em;
+    color: var(--text-muted);
+    margin-top: 6px;
+    display: block; /* Assicura che vada a capo */
+}
+
+button[type="submit"] {
+    display: block;
+    width: 100%;
+    background: linear-gradient(90deg, var(--accent-purple), var(--accent-magenta));
+    color: white;
+    padding: 16px; /* Padding leggermente aumentato */
+    border: none;
+    border-radius: 8px; /* Angoli più arrotondati */
+    cursor: pointer;
+    font-size: 1.25em;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background-position 0.4s ease;
+    background-size: 200% auto; /* Per effetto hover sul gradiente */
+}
+
+button[type="submit"]:hover {
+    transform: translateY(-3px); /* Effetto "sollevamento" più marcato */
+    box-shadow: 0 6px 20px rgba(255, 0, 255, 0.25);
+    background-position: right center; /* Cambia posizione del gradiente */
+}
+
+/* Sezione Risultati e Feedback */
+.results-section {
+    margin-top: 45px;
+}
+
+.results-section h2 {
+    text-align: center;
+    font-size: 1.8em; /* Dimensione per H2 */
+    color: var(--accent-cyan);
+    border-bottom: 2px solid var(--accent-purple);
+    padding-bottom: 12px;
+    margin-bottom: 25px;
+}
+
+.feedback-messages {
+    margin-bottom: 30px;
+    padding: 18px;
+    background-color: rgba(0, 255, 255, 0.07); /* Sfondo leggermente più visibile */
+    border-left: 5px solid var(--accent-cyan);
+    border-radius: 6px;
+}
+
+.feedback-messages h3 {
+    margin-top: 0;
+    color: var(--accent-cyan);
+    font-size: 1.3em;
+}
+
+.feedback-message {
+    margin-bottom: 10px;
+    color: var(--text-light);
+    font-size: 0.95em;
+}
+.feedback-message:last-child {
+    margin-bottom: 0;
+}
+
+/* Card delle Birre */
+.beer-card {
+    background-color: var(--element-bg); /* Sfondo leggermente diverso dal contenitore principale */
+    border: 1px solid var(--border-color);
+    padding: 20px;
+    margin-bottom: 25px;
+    border-radius: 10px; /* Angoli più arrotondati */
+    display: flex;
+    gap: 25px; /* Più spazio tra immagine e testo */
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4); /* Ombra più pronunciata */
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.beer-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 18px rgba(0, 255, 255, 0.15), 0 8px 22px rgba(255, 0, 255, 0.15);
+}
+
+.beer-card img {
+    width: 100px;  /* Larghezza fissa */
+    height: 150px; /* Altezza fissa */
+    object-fit: contain; /* Mantiene le proporzioni, non taglia, riempie se possibile */
+    border-radius: 6px;
+    align-self: center;
+    background-color: #fff; /* Sfondo bianco per immagini con trasparenza */
+    padding: 5px; /* Piccolo padding attorno all'immagine */
+    border: 1px solid var(--border-color);
+}
+
+.beer-info {
+    flex-grow: 1;
+}
+
+.beer-card h3 {
+    margin-top: 0;
+    margin-bottom: 10px; /* Più spazio sotto H3 */
+    color: var(--accent-magenta);
+    font-size: 1.5em; /* Titolo birra più grande */
+}
+
+.beer-card p {
+    margin: 8px 0;
+    color: var(--text-muted);
+    font-size: 0.95em;
+}
+
+.beer-card strong {
+    color: var(--text-light);
+    font-weight: 600; /* Leggermente più bold */
+}
+
+/* Stili per placeholder (suggerimenti negli input) */
+::placeholder { /* Chrome, Firefox, Opera, Safari 10.1+ */
+  color: var(--text-muted);
+  opacity: 0.7; /* Firefox */
+}
+:-ms-input-placeholder { /* Internet Explorer 10-11 */
+  color: var(--text-muted);
+  opacity: 0.7;
+}
+::-ms-input-placeholder { /* Microsoft Edge */
+  color: var(--text-muted);
+  opacity: 0.7;
+}
+
+
+/* Media Queries per Responsività */
+@media (max-width: 768px) {
+    .container {
+        margin: 20px;
+        padding: 20px;
+    }
+    header h1 { font-size: 2.2em; }
+    button[type="submit"] { font-size: 1.15em; padding: 14px; }
+}
+
+@media (max-width: 600px) {
+    header h1 { font-size: 2em; }
+    header p { font-size: 1.05em; }
+    
+    .beer-card {
+        flex-direction: column; /* Immagine sopra, testo sotto */
+        align-items: center;
+        text-align: center;
+    }
+    .beer-card img {
+        margin-bottom: 18px; /* Più spazio sotto l'immagine quando è impilata */
+        max-width: 120px; /* Immagine un po' più grande su mobile quando è da sola */
+        height: auto; /* Altezza automatica per mantenere proporzioni con max-width */
+    }
+    .beer-info { width: 100%; } /* Occupa tutta la larghezza */
+}
+
+@media (max-width: 480px) {
+    body { font-size: 15px; } /* Riduci leggermente il font base per schermi molto piccoli */
+    header h1 { font-size: 1.8em; }
+    .container { margin: 10px; padding: 15px; }
+    select,
+    input[type="text"],
+    input[type="number"],
+    button[type="submit"] {
+        font-size: 0.95em; /* Riduci leggermente il font degli elementi del form */
+    }
+    .beer-card h3 { font-size: 1.3em; }
+}
+>>>>>>> d623e90fa858e57a4b3a592ce6cb66e0862688c2

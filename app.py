@@ -112,8 +112,13 @@ def filter_beers(beers_data, preferences):
         filtered_list = temp_list
     
     # Filtro per Valutazione Minima
+<<<<<<< HEAD
     min_rating_str = preferences.get('min_rating', '').strip() # Prendi la stringa e puliscila
     if min_rating_str: # Prova a convertire solo se non è vuota
+=======
+    min_rating_str = preferences.get('min_rating', '').strip()
+    if min_rating_str:
+>>>>>>> d623e90fa858e57a4b3a592ce6cb66e0862688c2
         try:
             min_r = float(min_rating_str)
             if 1.0 <= min_r <= 5.0:
@@ -138,7 +143,11 @@ def filter_beers(beers_data, preferences):
     
     alcohol_map = {'leggera': "Leggera", 'media': "Media", 'forte': "Forte"}
     if preferences.get('alcohol_pref') and preferences.get('alcohol_pref') != 'any':
+<<<<<<< HEAD
         feedback_messages.append(f"🍺 Gradazione '{alcohol_map.get(preferences.get('alcohol_pref'), preferences.get('alcohol_pref'))}': L'API attuale non mi dà questo dettaglio, ma è una tua indicazione di gusto!")
+=======
+        feedback_messages.append(f"🍺 Gradazione '{alcohol_map.get(preferences.get('alcohol_pref'), preferences.get('alcohol_pref'))}': L'API non mi dà questo dettaglio, ma è una tua indicazione di gusto!")
+>>>>>>> d623e90fa858e57a4b3a592ce6cb66e0862688c2
 
     food_pairing_text = preferences.get('food_pairing_text','').strip()
     if food_pairing_text:
@@ -150,9 +159,15 @@ def filter_beers(beers_data, preferences):
     origin_country_preference = preferences.get('origin_text', '').strip()
     origin_choice_made = preferences.get('origin_q') == 'yes'
     if origin_choice_made and origin_country_preference:
+<<<<<<< HEAD
         feedback_messages.append(f"🌍 Preferenza Paese: '{origin_country_preference}'. Bello! Purtroppo, l'API che usiamo non mi dice da dove vengono le birre, quindi non posso usarlo come filtro. Ma è un ottimo spunto!")
     elif origin_choice_made and not origin_country_preference:
         feedback_messages.append("🌍 Hai indicato una preferenza per l'origine ma non specificato un paese. In ogni caso, con l'attuale API non potrei filtrare per questo criterio.")
+=======
+        feedback_messages.append(f"🌍 Preferenza Paese: '{origin_country_preference}'. Bello! Purtroppo, l'API non mi dice da dove vengono le birre. Tienilo come spunto!")
+    elif origin_choice_made and not origin_country_preference:
+        feedback_messages.append("🌍 Hai indicato una preferenza per l'origine ma non specificato un paese. L'API attuale comunque non mi permette di filtrare.")
+>>>>>>> d623e90fa858e57a4b3a592ce6cb66e0862688c2
 
     occasion_map = {'relax': "Relax", 'party': "Festa", 'aperitivo': "Aperitivo", 'meal': "Pasto"}
     if preferences.get('occasion') and preferences.get('occasion') != 'any':
@@ -175,6 +190,7 @@ def filter_beers(beers_data, preferences):
         color_pref = preferences.get('color_preference')
         style_feedback = ""
         current_style = preferences.get('style')
+<<<<<<< HEAD
         if current_style == 'stout' and color_pref != 'dark': style_feedback = " (Interessante, dato che le Stout sono tipicamente scure!)"
         elif current_style == 'red_ale' and color_pref != 'amber': style_feedback = " (Curioso, le Red Ale tendono all'ambrato!)"
         feedback_messages.append(f"🎨 Colore '{color_map.get(color_pref, color_pref)}'{style_feedback}. Dipende molto dallo stile!")
@@ -190,6 +206,18 @@ def filter_beers(beers_data, preferences):
     valid_items_for_sort.sort(key=get_rating_for_sort, reverse=True)
     filtered_list = valid_items_for_sort
 
+=======
+        if current_style == 'stout' and color_pref != 'dark': style_feedback = " (Le Stout sono tipicamente scure!)"
+        elif current_style == 'red_ale' and color_pref != 'amber': style_feedback = " (Le Red Ale tendono all'ambrato!)"
+        feedback_messages.append(f"🎨 Colore '{color_map.get(color_pref, color_pref)}'{style_feedback}. Dipende molto dallo stile!")
+    
+    def get_rating_for_sort(beer_item):
+        if isinstance(beer_item, dict) and isinstance(beer_item.get('rating'), dict) and isinstance(beer_item['rating'].get('average'), (int, float)):
+            return beer_item['rating']['average']
+        return 0 
+
+    filtered_list.sort(key=get_rating_for_sort, reverse=True)
+>>>>>>> d623e90fa858e57a4b3a592ce6cb66e0862688c2
     return filtered_list, feedback_messages
 
 @app.route('/', methods=['GET', 'POST'])
@@ -207,10 +235,45 @@ def index():
             try:
                 all_beers_data = fetch_beers_from_api(style_choice)
             except Exception as e_fetch:
+<<<<<<< HEAD
                 # Questo print sarà visibile solo nei log del server (es. terminale locale o log di Render)
                 print(f"ERRORE CRITICO durante fetch_beers_from_api: {e_fetch}")
                 all_beers_data = [] # Assicura che sia una lista vuota in caso di errore grave
                 feedback.append("☠️ Ops! C'è stato un problema serissimo nel recuperare i dati delle birre. Il capo tecnico è stato avvisato (speriamo!). Riprova più tardi.")
+=======
+                print(f"Errore critico durante fetch_beers_from_api: {e_fetch}")
+                all_beers_data = [] # Assicura che sia una lista vuota in caso di errore grave
+                feedback.append("☠️ Ops! C'è stato un problema serio nel recuperare i dati delle birre. Riprova più tardi.")
+
+            if all_beers_data:
+                # Assicurati che all_beers_data contenga solo dizionari prima di filtrare
+                valid_beers_data_for_filter = [b for b in all_beers_data if isinstance(b, dict)]
+                suggestions, filter_feedback = filter_beers(valid_beers_data_for_filter, form_data_retained)
+                feedback.extend(filter_feedback) # Aggiungi i feedback dal filtro
+                
+                if suggestions:
+                    if len(suggestions) >= 5:
+                        suggestions = suggestions[:min(len(suggestions), 7)] # Mostra 5-7 suggerimenti
+                    # Se meno di 5, 'suggestions' contiene già tutti quelli trovati (nessuna azione necessaria)
+                
+                if not suggestions and not feedback: # Se non ci sono suggerimenti e nessun feedback che spieghi perché
+                    feedback.append("🤔 Nessuna birra trovata con i filtri attuali. Prova ad allargare la ricerca!")
+            elif not feedback: # Se all_beers_data è vuoto e non ci sono già messaggi di errore API
+                feedback.append("🔎 Non ho trovato birre per lo stile selezionato o l'API non ha risposto. Prova un altro stile o più tardi.")
+        
+        # In caso di GET request o se il POST non ha prodotto risultati specifici,
+        # potresti voler caricare comunque 'index.html' vuoto o con un messaggio di benvenuto.
+        # Le variabili suggestions, feedback, form_data_retained avranno i loro valori di default (vuoti).
+
+    except Exception as e:
+        # Log dell'errore generale lato server (visibile nei log di Render)
+        print(f"Errore non gestito nella route index: {e}")
+        # Messaggio generico per l'utente
+        feedback.append("🔧 Ops! Qualcosa è andato storto da questa parte. Riprova tra un attimo.")
+        # Pulisci i suggerimenti in caso di errore grave per non mostrare dati potenzialmente corrotti
+        suggestions = [] 
+        form_data_retained = request.form.to_dict() if request.method == 'POST' else {}
+>>>>>>> d623e90fa858e57a4b3a592ce6cb66e0862688c2
 
             if all_beers_data: # Prosegui solo se all_beers_data non è None e non è vuoto
                 # Assicurati che all_beers_data contenga solo dizionari prima di filtrare
@@ -219,6 +282,7 @@ def index():
                 if not valid_beers_data_for_filter and all_beers_data: # Se c'erano dati ma nessuno valido
                     feedback.append("🤔 I dati ricevuti dall'API delle birre erano un po' strani. Non sono riuscito a processarli.")
 
+<<<<<<< HEAD
                 suggestions, filter_feedback = filter_beers(valid_beers_data_for_filter, form_data_retained)
                 feedback.extend(filter_feedback) # Aggiungi i feedback dal filtro
                 
@@ -246,9 +310,15 @@ def index():
         # Ripopola il form con i dati inviati se disponibili, altrimenti vuoto
         form_data_retained = request.form.to_dict() if request.method == 'POST' else {}
 
+=======
+>>>>>>> d623e90fa858e57a4b3a592ce6cb66e0862688c2
     return render_template('index.html', suggestions=suggestions, feedback=feedback, form_data=form_data_retained)
 
 # Questo blocco serve solo quando esegui il file direttamente con 'python app.py'
 # per testare localmente. Gunicorn (usato da Render) non lo esegue.
 if __name__ == '__main__':
+<<<<<<< HEAD
     app.run(debug=True)
+=======
+    app.run(debug=True)
+>>>>>>> d623e90fa858e57a4b3a592ce6cb66e0862688c2
