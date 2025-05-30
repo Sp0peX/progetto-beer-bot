@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request
 import requests
 import random
+import json # Importa json per gestire potenziali errori di decodifica in modo più esplicito
 
 app = Flask(__name__)
 
@@ -9,72 +10,85 @@ STYLES_ENDPOINTS = {
     "ale": "ale",
     "stout": "stouts",
     "red_ale": "red-ale",
-    "any": ["ale", "stouts", "red-ale"]
+    "any": ["ale", "stouts", "red-ale"] # Se "any", li proviamo tutti
 }
 
 def fetch_beers_from_api(style_key="any"):
-    beers = []
-    endpoints_to_try = []
+    beers_list = []
+    endpoints_to_fetch = []
 
     if style_key == "any":
-        endpoints_to_try = STYLES_ENDPOINTS["any"]
+        endpoints_to_fetch = STYLES_ENDPOINTS["any"]
     elif style_key in STYLES_ENDPOINTS:
-        endpoints_to_try = [STYLES_ENDPOINTS[style_key]]
+        endpoints_to_fetch = [STYLES_ENDPOINTS[style_key]]
     else: 
-        # Fallback se lo style_key non è valido, prova comunque tutti
-        endpoints_to_try = STYLES_ENDPOINTS["any"]
+        # Fallback se lo style_key non è valido (improbabile con un select HTML)
+        endpoints_to_fetch = STYLES_ENDPOINTS["any"]
 
-    actual_endpoints_tried = []
-    for endpoint_suffix in endpoints_to_try:
+    for endpoint_suffix in endpoints_to_fetch:
         url = f"{API_BASE_URL}{endpoint_suffix}"
-        actual_endpoints_tried.append(url)
         try:
             response = requests.get(url, timeout=10)
-            response.raise_for_status()
+            response.raise_for_status() # Solleva un'eccezione per errori HTTP (4xx o 5xx)
             data = response.json()
-            # Assicurati che i dati siano una lista di dizionari
+            
+            # Assicurati che i dati siano una lista e che ogni elemento sia un dizionario
             if isinstance(data, list):
-                beers.extend(d for d in data if isinstance(d, dict))
+                for item in data:
+                    if isinstance(item, dict):
+                        beers_list.append(item)
             elif isinstance(data, dict): # A volte API singole tornano un dict se c'è un solo item
-                beers.append(data)
-            # Altri formati di dati non sono gestiti e verranno ignorati
+                beers_list.append(data)
+            # Altri formati di dati (es. stringa di errore) non verranno aggiunti
 
         except requests.exceptions.Timeout:
             print(f"Timeout durante la richiesta a {url}")
-        except requests.exceptions.RequestException as e:
-            print(f"Errore nel contattare l'API {url}: {e}")
-        except ValueError: # Errore nella decodifica JSON
-            print(f"Errore nel decodificare JSON da {url}")
-    
-    # Rimuovi duplicati se abbiamo aggregato da più endpoint (basato sul nome)
-    if len(actual_endpoints_tried) > 1:
+        except requests.exceptions.HTTPError as e:
+            print(f"Errore HTTP nel contattare l'API {url}: {e}")
+        except requests.exceptions.RequestException as e: # Altri errori di rete/connessione
+            print(f"Errore di rete nel contattare l'API {url}: {e}")
+        except json.JSONDecodeError: # Errore specifico se il JSON non è valido
+             print(f"Errore nel decodificare JSON da {url}. Risposta non era JSON valido.")
+        except Exception as e: # Catch-all per altri errori imprevisti durante il fetch
+            print(f"Errore imprevisto durante il fetch da {url}: {e}")
+
+    # Rimuovi duplicati basati sul nome se abbiamo aggregato da più endpoint
+    if len(endpoints_to_fetch) > 1 and beers_list:
         seen_names = set()
         unique_beers = []
-        for beer in beers:
-            # Assicurati che beer sia un dizionario e abbia un nome prima di accedere a beer.get('name')
-            if isinstance(beer, dict) and beer.get('name') and beer.get('name') not in seen_names:
-                unique_beers.append(beer)
-                seen_names.add(beer.get('name'))
+        for beer in beers_list:
+            # Controlla che beer sia un dizionario e abbia una chiave 'name'
+            if isinstance(beer, dict) and beer.get('name'):
+                if beer['name'] not in seen_names:
+                    unique_beers.append(beer)
+                    seen_names.add(beer['name'])
+            else:
+                # Se un item non è un dizionario o non ha nome, potresti volerlo loggare o gestire
+                print(f"Attenzione: item birra non valido o senza nome: {beer}")
         return unique_beers
-    return beers
-
+    return beers_list
 
 def parse_price(price_str):
+    if price_str is None:
+        return None
     if isinstance(price_str, (int, float)):
         return float(price_str)
     if isinstance(price_str, str):
         try:
-            # Pulisce la stringa del prezzo rimuovendo '$' e ',' e gestendo '.' come decimale
-            cleaned_price = price_str.replace('$', '').replace(',', '').strip()
-            if cleaned_price:
+            # Rimuove il simbolo '$', spazi e sostituisce ',' con '.' per lo standard float
+            cleaned_price = price_str.replace('$', '').replace(',', '.').strip()
+            if cleaned_price: # Assicura che non sia una stringa vuota dopo la pulizia
                 return float(cleaned_price)
         except ValueError:
-            return None # Non è stato possibile convertire
-    return None # Formato non riconosciuto o stringa vuota/None
+            # La stringa non può essere convertita in float
+            return None
+    return None # Altri tipi non gestiti o conversione fallita
 
+def filter_beers(beers_data, preferences):
+    if not isinstance(beers_data, list): # Assicurati che l'input sia una lista
+        return [], ["Errore interno: i dati delle birre non sono nel formato atteso."]
 
-def filter_beers(beers, preferences):
-    filtered_list = list(beers) 
+    filtered_list = list(beers_data) # Lavora su una copia
     feedback_messages = []
 
     # Filtro per Prezzo
@@ -82,29 +96,24 @@ def filter_beers(beers, preferences):
     if price_pref and price_pref != "any":
         temp_list = []
         for beer in filtered_list:
-            if not isinstance(beer, dict): continue # Salta se l'item non è un dizionario
+            if not isinstance(beer, dict): continue 
             beer_price_val = parse_price(beer.get('price'))
             
             passes_price_filter = False
             if beer_price_val is not None:
-                if price_pref == 'economical' and beer_price_val < 8.0:
-                    passes_price_filter = True
-                elif price_pref == 'medium' and 8.0 <= beer_price_val <= 15.0:
-                    passes_price_filter = True
-                elif price_pref == 'premium' and beer_price_val > 15.0:
-                    passes_price_filter = True
+                if price_pref == 'economical' and beer_price_val < 8.0: passes_price_filter = True
+                elif price_pref == 'medium' and 8.0 <= beer_price_val <= 15.0: passes_price_filter = True
+                elif price_pref == 'premium' and beer_price_val > 15.0: passes_price_filter = True
             
             if passes_price_filter:
                 temp_list.append(beer)
-            elif price_pref == "any" and beer_price_val is None: # Includi se il prezzo è "any" e non parsabile
-                 temp_list.append(beer)
-
-
+            # Le birre con prezzo non valido o non corrispondente al range vengono escluse
+            # a meno che la preferenza non fosse "any" (gestita implicitamente non filtrando)
         filtered_list = temp_list
     
     # Filtro per Valutazione Minima
-    min_rating_str = preferences.get('min_rating', '').strip() # Prendi la stringa e puliscila
-    if min_rating_str: # Prova a convertire solo se non è vuota
+    min_rating_str = preferences.get('min_rating', '').strip()
+    if min_rating_str:
         try:
             min_r = float(min_rating_str)
             if 1.0 <= min_r <= 5.0:
@@ -112,114 +121,122 @@ def filter_beers(beers, preferences):
                 for beer in filtered_list:
                     if not isinstance(beer, dict): continue
                     rating_data = beer.get('rating', {})
-                    if isinstance(rating_data, dict):
-                        average_rating = rating_data.get('average')
-                        if average_rating is not None:
-                            try:
-                                if float(average_rating) >= min_r:
-                                    temp_list.append(beer)
-                            except (ValueError, TypeError): pass # Ignora se la valutazione non è un numero valido
+                    # Assicurati che rating_data sia un dizionario e average sia un numero
+                    if isinstance(rating_data, dict) and isinstance(rating_data.get('average'), (int, float)):
+                        if rating_data['average'] >= min_r:
+                            temp_list.append(beer)
                 filtered_list = temp_list
             else:
-                feedback_messages.append("⚠️ La valutazione minima che hai inserito non è valida (deve essere tra 1.0 e 5.0).")
+                feedback_messages.append("⚠️ Valutazione minima non valida (1-5). Filtro non applicato.")
         except ValueError:
-            feedback_messages.append("⚠️ Il valore per la valutazione minima non è un numero valido.")
+            feedback_messages.append("⚠️ Valore per valutazione minima non numerico. Filtro non applicato.")
 
-    # Feedback per domande non direttamente filtrabili con l'API attuale
+    # Feedback per le altre preferenze (non usate per filtrare attivamente i dati dall'API attuale)
+    flavor_map = {'amaro': "Amaro", 'dolce': "Dolce", 'agrumato': "Agrumato/Fruttato", 'tostato': "Tostato"}
     if preferences.get('flavor_profile') and preferences.get('flavor_profile') != 'any':
-        feedback_messages.append(f"👍 Profilo di sapore: '{preferences.get('flavor_profile')}'. Ottima scelta!")
+        feedback_messages.append(f"👍 Profilo sapore: '{flavor_map.get(preferences.get('flavor_profile'), preferences.get('flavor_profile'))}'. Ottima scelta!")
     
+    alcohol_map = {'leggera': "Leggera", 'media': "Media", 'forte': "Forte"}
     if preferences.get('alcohol_pref') and preferences.get('alcohol_pref') != 'any':
-        feedback_messages.append(f"🍺 Gradazione '{preferences.get('alcohol_pref')}': l'API attuale non mi dà questo dettaglio, ma è una tua indicazione di gusto!")
+        feedback_messages.append(f"🍺 Gradazione '{alcohol_map.get(preferences.get('alcohol_pref'), preferences.get('alcohol_pref'))}': L'API non mi dà questo dettaglio, ma è una tua indicazione di gusto!")
 
-    if preferences.get('food_pairing_text','').strip(): # Se c'è testo per l'abbinamento
-        food = preferences.get('food_pairing_text').strip()
-        style_chosen = preferences.get('style', 'qualsiasi stile') # Usa lo stile selezionato nel form
-        feedback_messages.append(f"🍕 Per l'abbinamento con '{food}': le birre tipo '{style_chosen.replace('_', ' ').title()}' di solito sono un'ottima compagnia!")
+    food_pairing_text = preferences.get('food_pairing_text','').strip()
+    if food_pairing_text:
+        style_chosen_key = preferences.get('style', 'any')
+        style_map = {"ale": "Ale", "stout": "Stout", "red_ale": "Red Ale", "any": "qualsiasi stile"}
+        style_chosen_display = style_map.get(style_chosen_key, style_chosen_key.replace('_', ' ').title())
+        feedback_messages.append(f"🍕 Per l'abbinamento con '{food_pairing_text}': le birre tipo '{style_chosen_display}' di solito sono un'ottima compagnia!")
     
     origin_country_preference = preferences.get('origin_text', '').strip()
     origin_choice_made = preferences.get('origin_q') == 'yes'
     if origin_choice_made and origin_country_preference:
-        feedback_messages.append(f"🌍 Preferenza Paese: '{origin_country_preference}'. Bello! Purtroppo, l'API che usiamo non mi dice da dove vengono le birre, quindi non posso usarlo come filtro. Ma è un ottimo spunto!")
+        feedback_messages.append(f"🌍 Preferenza Paese: '{origin_country_preference}'. Bello! Purtroppo, l'API non mi dice da dove vengono le birre. Tienilo come spunto!")
     elif origin_choice_made and not origin_country_preference:
-        feedback_messages.append("🌍 Hai indicato una preferenza per l'origine ma non hai specificato un paese. In ogni caso, con l'attuale API non potrei filtrare per questo criterio.")
+        feedback_messages.append("🌍 Hai indicato una preferenza per l'origine ma non specificato un paese. L'API attuale comunque non mi permette di filtrare.")
 
-    occasion = preferences.get('occasion')
-    if occasion and occasion != 'any':
-        feedback_messages.append(f"🎉 Occasione '{occasion}': speriamo queste birre siano perfette!")
+    occasion_map = {'relax': "Relax", 'party': "Festa", 'aperitivo': "Aperitivo", 'meal': "Pasto"}
+    if preferences.get('occasion') and preferences.get('occasion') != 'any':
+        feedback_messages.append(f"🎉 Occasione '{occasion_map.get(preferences.get('occasion'), preferences.get('occasion'))}': speriamo queste birre siano perfette!")
 
-    adventure = preferences.get('adventure_level')
-    if adventure:
-        adventure_map = {'classic': "😎 Classico, vai sul sicuro!", 'curious': "🧐 Curioso/a di provare cose nuove? Bene!", 'daredevil': "🤘 Modalità spericolata? Vediamo!"}
-        feedback_messages.append(adventure_map.get(adventure, "Interessante scelta di avventura!"))
+    adventure_map = {'classic': "😎 Classico, vai sul sicuro!", 'curious': "🧐 Curioso/a di provare cose nuove? Bene!", 'daredevil': "🤘 Modalità spericolata? Vediamo!"}
+    if preferences.get('adventure_level') and preferences.get('adventure_level') != 'any': # 'any' non dovrebbe esserci ma per sicurezza
+        feedback_messages.append(adventure_map.get(preferences.get('adventure_level'), "Scelta avventurosa!"))
 
-    intensity = preferences.get('flavor_intensity')
-    if intensity and intensity != 'any':
-        feedback_messages.append(f"💥 Intensità sapore '{intensity}'. Non la misuro, ma è una buona dritta per te!")
+    intensity_map = {'delicate': "Delicata", 'medium': "Media", 'intense': "Intensa"}
+    if preferences.get('flavor_intensity') and preferences.get('flavor_intensity') != 'any':
+        feedback_messages.append(f"💥 Intensità sapore '{intensity_map.get(preferences.get('flavor_intensity'), preferences.get('flavor_intensity'))}'. Buona dritta per te!")
     
-    body_pref = preferences.get('body_preference')
-    if body_pref and body_pref != 'any':
-        body_map = {'light': "💧 Leggera e scorrevole", 'medium': "👌 Media consistenza", 'full': "🏋️‍♀️ Corposa e piena"}
-        feedback_messages.append(f"🥤 Corpo '{body_map.get(body_pref, body_pref)}'. Altra info utile!")
+    body_map = {'light': "💧 Leggera e scorrevole", 'medium': "👌 Media consistenza", 'full': "🏋️‍♀️ Corposa e piena"}
+    if preferences.get('body_preference') and preferences.get('body_preference') != 'any':
+        feedback_messages.append(f"🥤 Corpo '{body_map.get(preferences.get('body_preference'), preferences.get('body_preference'))}'. Info utile!")
     
-    color_pref = preferences.get('color_preference')
-    if color_pref and color_pref != 'any':
+    color_map = {'light': "Chiara/Bionda", 'amber': "Ambrata/Rossa", 'dark': "Scura/Nera"}
+    if preferences.get('color_preference') and preferences.get('color_preference') != 'any':
+        color_pref = preferences.get('color_preference')
         style_feedback = ""
         current_style = preferences.get('style')
-        if current_style == 'stout' and color_pref != 'dark':
-            style_feedback = " (Interessante, dato che le Stout sono tipicamente scure!)"
-        elif current_style == 'red_ale' and color_pref != 'amber':
-            style_feedback = " (Curioso, le Red Ale tendono all'ambrato!)"
-        feedback_messages.append(f"🎨 Colore '{color_pref}'{style_feedback}. Dipende molto dallo stile!")
+        if current_style == 'stout' and color_pref != 'dark': style_feedback = " (Le Stout sono tipicamente scure!)"
+        elif current_style == 'red_ale' and color_pref != 'amber': style_feedback = " (Le Red Ale tendono all'ambrato!)"
+        feedback_messages.append(f"🎨 Colore '{color_map.get(color_pref, color_pref)}'{style_feedback}. Dipende molto dallo stile!")
     
-    # Ordina per valutazione (decrescente), assicurandoti che gli item siano dizionari
-    def get_rating_for_sort(b):
-        # Assicurati che b sia un dizionario e abbia 'rating' che è un dizionario con 'average'
-        if isinstance(b, dict) and isinstance(b.get('rating'), dict) and isinstance(b['rating'].get('average'), (int, float)):
-            return b['rating']['average']
-        return 0 # Ritorna 0 se la struttura non è come attesa, così va in fondo
+    def get_rating_for_sort(beer_item):
+        if isinstance(beer_item, dict) and isinstance(beer_item.get('rating'), dict) and isinstance(beer_item['rating'].get('average'), (int, float)):
+            return beer_item['rating']['average']
+        return 0 
 
-    # Filtra ulteriormente per assicurare che solo dizionari validi vengano ordinati
-    valid_items_for_sort = [item for item in filtered_list if isinstance(item, dict)]
-    valid_items_for_sort.sort(key=get_rating_for_sort, reverse=True)
-    filtered_list = valid_items_for_sort
-
+    filtered_list.sort(key=get_rating_for_sort, reverse=True)
     return filtered_list, feedback_messages
-
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
-    beers_data = []
     suggestions = []
     feedback = []
-    form_data = {} 
+    form_data_retained = {} # Per ripopolare il form con le scelte precedenti
 
-    if request.method == 'POST':
-        form_data = request.form.to_dict() 
-        style_choice = form_data.get('style', 'any')
-        beers_data = fetch_beers_from_api(style_choice)
-
-        if beers_data:
-            # Assicurati che beers_data contenga solo dizionari prima di filtrare
-            valid_beers_data = [b for b in beers_data if isinstance(b, dict)]
-            suggestions, feedback = filter_beers(valid_beers_data, form_data)
+    try:
+        if request.method == 'POST':
+            form_data_retained = request.form.to_dict() 
+            style_choice = form_data_retained.get('style', 'any')
             
-            if suggestions:
-                # Se meno di 5 suggerimenti, mostrali tutti. Altrimenti, i primi (fino a 7).
-                if len(suggestions) < 5:
-                    pass # suggestions contiene già tutti quelli trovati
-                else: 
-                    suggestions = suggestions[:min(len(suggestions), 7)] 
-            
-            # Aggiungi un messaggio se non ci sono suggerimenti MA c'erano dati dall'API
-            # E non ci sono già altri messaggi di feedback che spiegano la situazione
-            if not suggestions and not feedback: 
-                feedback.append("🤔 Non ho trovato birre con i filtri applicabili. Prova a cambiare qualcosa!")
-        else:
-            # Se fetch_beers_from_api ritorna vuoto o None
-            feedback.append("☠️ Ops! Non riesco a parlare con il mio spacciatore di dati sulle birre (API) o non ci sono birre per lo stile scelto. Riprova tra un po' o cambia stile.")
+            # Avvolgi fetch_beers_from_api in un try-except per maggiore robustezza
+            try:
+                all_beers_data = fetch_beers_from_api(style_choice)
+            except Exception as e_fetch:
+                print(f"Errore critico durante fetch_beers_from_api: {e_fetch}")
+                all_beers_data = [] # Assicura che sia una lista vuota in caso di errore grave
+                feedback.append("☠️ Ops! C'è stato un problema serio nel recuperare i dati delle birre. Riprova più tardi.")
 
-    return render_template('index.html', suggestions=suggestions, feedback=feedback, form_data=form_data)
+            if all_beers_data:
+                # Assicurati che all_beers_data contenga solo dizionari prima di filtrare
+                valid_beers_data_for_filter = [b for b in all_beers_data if isinstance(b, dict)]
+                suggestions, filter_feedback = filter_beers(valid_beers_data_for_filter, form_data_retained)
+                feedback.extend(filter_feedback) # Aggiungi i feedback dal filtro
+                
+                if suggestions:
+                    if len(suggestions) >= 5:
+                        suggestions = suggestions[:min(len(suggestions), 7)] # Mostra 5-7 suggerimenti
+                    # Se meno di 5, 'suggestions' contiene già tutti quelli trovati (nessuna azione necessaria)
+                
+                if not suggestions and not feedback: # Se non ci sono suggerimenti e nessun feedback che spieghi perché
+                    feedback.append("🤔 Nessuna birra trovata con i filtri attuali. Prova ad allargare la ricerca!")
+            elif not feedback: # Se all_beers_data è vuoto e non ci sono già messaggi di errore API
+                feedback.append("🔎 Non ho trovato birre per lo stile selezionato o l'API non ha risposto. Prova un altro stile o più tardi.")
+        
+        # In caso di GET request o se il POST non ha prodotto risultati specifici,
+        # potresti voler caricare comunque 'index.html' vuoto o con un messaggio di benvenuto.
+        # Le variabili suggestions, feedback, form_data_retained avranno i loro valori di default (vuoti).
+
+    except Exception as e:
+        # Log dell'errore generale lato server (visibile nei log di Render)
+        print(f"Errore non gestito nella route index: {e}")
+        # Messaggio generico per l'utente
+        feedback.append("🔧 Ops! Qualcosa è andato storto da questa parte. Riprova tra un attimo.")
+        # Pulisci i suggerimenti in caso di errore grave per non mostrare dati potenzialmente corrotti
+        suggestions = [] 
+        form_data_retained = request.form.to_dict() if request.method == 'POST' else {}
+
+
+    return render_template('index.html', suggestions=suggestions, feedback=feedback, form_data=form_data_retained)
 
 # Questo blocco serve solo quando esegui il file direttamente con 'python app.py'
 # per testare localmente. Gunicorn (usato da Render) non lo esegue.
