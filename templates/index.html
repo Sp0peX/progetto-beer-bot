@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Beer Finder 🤖</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #1a1a2e; /* Blu notte scuro */
+            --card-bg: #1f1f38; /* Un po' più chiaro per le card e form */
+            --text-light: #e0e0e0;
+            --text-muted: #a0a0c0;
+            --accent-cyan: #00ffff;
+            --accent-magenta: #ff00ff;
+            --accent-purple: #9d00ff;
+            --border-color: #3a3a5e;
+        }
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 800px;
+            margin: 30px auto;
+            padding: 20px;
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 0 25px rgba(0, 255, 255, 0.1), 0 0 30px rgba(255, 0, 255, 0.1);
+        }
+        header { text-align: center; margin-bottom: 30px; }
+        h1 {
+            font-size: 2.5em;
+            font-weight: 700;
+            background: linear-gradient(90deg, var(--accent-cyan), var(--accent-magenta));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.2em;
+        }
+        header p { font-size: 1.1em; color: var(--text-muted); }
+
+        .form-group { margin-bottom: 20px; }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--accent-cyan);
+        }
+        select, input[type="text"], input[type="number"] {
+            width: 100%;
+            padding: 12px;
+            background-color: var(--bg-dark);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            box-sizing: border-box;
+            color: var(--text-light);
+            font-size: 1em;
+        }
+        select:focus, input:focus {
+            outline: none;
+            border-color: var(--accent-magenta);
+            box-shadow: 0 0 10px rgba(255, 0, 255, 0.3);
+        }
+        .input-note { font-size: 0.85em; color: var(--text-muted); margin-top: 5px; }
+
+        button[type="submit"] {
+            display: block;
+            width: 100%;
+            background: linear-gradient(90deg, var(--accent-purple), var(--accent-magenta));
+            color: white;
+            padding: 15px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1.2em;
+            font-weight: 600;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        button[type="submit"]:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 0, 255, 0.2);
+        }
+
+        .results-section { margin-top: 40px; }
+        .results-section h2 {
+            text-align: center;
+            color: var(--accent-cyan);
+            border-bottom: 2px solid var(--accent-purple);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .beer-card {
+            background-color: var(--bg-dark);
+            border: 1px solid var(--border-color);
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            display: flex; /* Per allineare immagine e testo */
+            gap: 20px; /* Spazio tra immagine e testo */
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            overflow: hidden; /* Per non far sbordare l'immagine se troppo grande */
+        }
+        .beer-card img {
+            max-width: 100px;
+            max-height: 150px; /* Limita altezza immagine */
+            object-fit: contain; /* Mantiene le proporzioni, non taglia */
+            border-radius: 4px;
+            align-self: center; /* Centra verticalmente l'immagine */
+        }
+        .beer-info { flex-grow: 1; } /* Il testo occupa lo spazio rimanente */
+        .beer-card h3 {
+            margin-top: 0;
+            color: var(--accent-magenta);
+            font-size: 1.4em;
+        }
+        .beer-card p { margin: 5px 0; color: var(--text-muted); }
+        .beer-card strong { color: var(--text-light); }
+
+        .feedback-messages { margin-bottom: 30px; padding: 15px; background-color: rgba(0, 255, 255, 0.05); border-left: 4px solid var(--accent-cyan); border-radius: 4px;}
+        .feedback-messages h3 { margin-top: 0; color: var(--accent-cyan); }
+        .feedback-message { margin-bottom: 8px; color: var(--text-light); }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            .container { margin: 15px; padding: 15px; }
+            h1 { font-size: 2em; }
+            .beer-card { flex-direction: column; align-items: center; text-align: center; } /* Immagine sopra, testo sotto */
+            .beer-card img { margin-bottom: 15px; max-width: 80%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Beer Finder 🤖</h1>
+            <p>Ehi! Dimmi i tuoi gusti e scovo la birra giusta per te (o almeno ci provo! 😉)</p>
+        </header>
+
+        <form method="POST" action="/">
+            
+            <div class="form-group">
+                <label for="style">1. Su che stile di birra vuoi puntare?</label>
+                <select name="style" id="style">
+                    <option value="any" {% if form_data.style == 'any' or not form_data.style %}selected{% endif %}>🍻 Sorprendimi! / Non so</option>
+                    <option value="ale" {% if form_data.style == 'ale' %}selected{% endif %}>🌿 Ale (Versatile)</option>
+                    <option value="stout" {% if form_data.style == 'stout' %}selected{% endif %}>☕ Stout (Scura e Tostata)</option>
+                    <option value="red_ale" {% if form_data.style == 'red_ale' %}selected{% endif %}>🍁 Red Ale (Ambrata e Maltata)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="price_range">2. Budget? 💰</label>
+                <select name="price_range" id="price_range">
+                    <option value="any" {% if form_data.price_range == 'any' or not form_data.price_range %}selected{% endif %}>💸 Nessun limite, sono un re!</option>
+                    <option value="economical" {% if form_data.price_range == 'economical' %}selected{% endif %}>🤑 Economica (sotto $8)</option>
+                    <option value="medium" {% if form_data.price_range == 'medium' %}selected{% endif %}>😐 Media ($8 - $15)</option>
+                    <option value="premium" {% if form_data.price_range == 'premium' %}selected{% endif %}>🧐 Premium (oltre $15)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="min_rating">3. Recensioni: Punteggio minimo? (1-5 stelle ✨)</label>
+                <input type="number" name="min_rating" id="min_rating" step="0.1" min="1" max="5" value="{{ form_data.min_rating if form_data.min_rating else '' }}" placeholder="Es. 3.8 (lascia vuoto se non ti importa)">
+            </div>
+
+            <div class="form-group">
+                <label for="flavor_profile">4. Che sapore ti ispira di più?</label>
+                <select name="flavor_profile" id="flavor_profile">
+                    <option value="any" {% if form_data.flavor_profile == 'any' or not form_data.flavor_profile %}selected{% endif %}>🤔 Indifferente / Mix</option>
+                    <option value="amaro" {% if form_data.flavor_profile == 'amaro' %}selected{% endif %}>😖 Amaro (tipo luppolo che si sente)</option>
+                    <option value="dolce" {% if form_data.flavor_profile == 'dolce' %}selected{% endif %}>🍬 Dolce (note di malto, caramello)</option>
+                    <option value="agrumato" {% if form_data.flavor_profile == 'agrumato' %}selected{% endif %}>🍋 Agrumato / Fruttato fresco</option>
+                    <option value="tostato" {% if form_data.flavor_profile == 'tostato' %}selected{% endif %}>☕ Tostato (caffè, cioccolato - tipico delle Stout)</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="alcohol_pref">5. Livello alcolico: come ti senti? 😵</label>
+                <select name="alcohol_pref" id="alcohol_pref">
+                    <option value="any" {% if form_data.alcohol_pref == 'any' or not form_data.alcohol_pref %}selected{% endif %}>🤷 Non mi interessa</option>
+                    <option value="leggera" {% if form_data.alcohol_pref == 'leggera' %}selected{% endif %}>깃털 Leggera (sotto 5%)</option>
+                    <option value="media" {% if form_data.alcohol_pref == 'media' %}selected{% endif %}>👍 Media (5% - 7%)</option>
+                    <option value="forte" {% if form_data.alcohol_pref == 'forte' %}selected{% endif %}>💪 Forte (oltre 7%)</option>
+                </select>
+                <div class="input-note">P.S. Non sempre ho questo dato, ma ci provo!</div>
+            </div>
+
+            <div class="form-group">
+                <label for="occasion">6. Per quale occasione è la birra? 🥳</label>
+                <select name="occasion" id="occasion">
+                    <option value="any" {% if form_data.occasion == 'any' or not form_data.occasion %}selected{% endif %}>Nessuna in particolare</option>
+                    <option value="relax" {% if form_data.occasion == 'relax' %}selected{% endif %}>🧘 Relax sul divano</option>
+                    <option value="party" {% if form_data.occasion == 'party' %}selected{% endif %}>🎉 Festa con amici</option>
+                    <option value="aperitivo" {% if form_data.occasion == 'aperitivo' %}selected{% endif %}>🥂 Aperitivo stiloso</option>
+                    <option value="meal" {% if form_data.occasion == 'meal' %}selected{% endif %}>🍽️ Accompagnare un pasto</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="adventure_level">7. Quanto sei avventuroso/a con i gusti? 🗺️</label>
+                <select name="adventure_level" id="adventure_level">
+                    <option value="classic" {% if form_data.adventure_level == 'classic' or not form_data.adventure_level %}selected{% endif %}>😌 Classico, vado sul sicuro</option>
+                    <option value="curious" {% if form_data.adventure_level == 'curious' %}selected{% endif %}>🧐 Mi piace provare cose nuove</option>
+                    <option value="daredevil" {% if form_data.adventure_level == 'daredevil' %}selected{% endif %}>🚀 Spericolato/a, stupiscimi!</option>
+                </select>
+            </div>
+             <div class="form-group">
+                <label for="flavor_intensity">8. Intensità del sapore: come la vuoi?</label>
+                <select name="flavor_intensity" id="flavor_intensity">
+                    <option value="any" {% if form_data.flavor_intensity == 'any' or not form_data.flavor_intensity %}selected{% endif %}>Va bene tutto</option>
+                    <option value="delicate" {% if form_data.flavor_intensity == 'delicate' %}selected{% endif %}>😇 Delicata, che non stanca</option>
+                    <option value="medium" {% if form_data.flavor_intensity == 'medium' %}selected{% endif %}>🙂 Media, il giusto equilibrio</option>
+                    <option value="intense" {% if form_data.flavor_intensity == 'intense' %}selected{% endif %}>😤 Intensa, che si fa sentire!</option>
+                </select>
+                 <div class="input-note">Non è un filtro preciso, ma mi aiuta a capire!</div>
+            </div>
+
+            <div class="form-group">
+                <label for="body_preference">9. Consistenza al palato (corpo):</label>
+                <select name="body_preference" id="body_preference">
+                    <option value="any" {% if form_data.body_preference == 'any' or not form_data.body_preference %}selected{% endif %}>Nessuna preferenza</option>
+                    <option value="light" {% if form_data.body_preference == 'light' %}selected{% endif %}>💧 Leggera e scorrevole</option>
+                    <option value="medium" {% if form_data.body_preference == 'medium' %}selected{% endif %}>👌 Media, né troppo né troppo poco</option>
+                    <option value="full" {% if form_data.body_preference == 'full' %}selected{% endif %}>🏋️‍♀️ Corposa e piena</option>
+                </select>
+                 <div class="input-note">Idem come sopra, non filtro ma capisco!</div>
+            </div>
+            
+            <div class="form-group">
+                <label for="color_preference">10. Colore della birra: hai un debole per qualche tonalità?</label>
+                <select name="color_preference" id="color_preference">
+                    <option value="any" {% if form_data.color_preference == 'any' or not form_data.color_preference %}selected{% endif %}>🌈 Tutti i colori dell'arcobaleno (o quasi)</option>
+                    <option value="light" {% if form_data.color_preference == 'light' %}selected{% endif %}>☀️ Chiara / Bionda</option>
+                    <option value="amber" {% if form_data.color_preference == 'amber' %}selected{% endif %}>🦊 Ambrata / Rossa</option>
+                    <option value="dark" {% if form_data.color_preference == 'dark' %}selected{% endif %}>🌙 Scura / Nera</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="food_pairing_q">11. Ci mangi qualcosa insieme? 🍕🍔🥩</label>
+                <select name="food_pairing_q" id="food_pairing_q" onchange="document.getElementById('food_pairing_text_group').style.display = this.value === 'yes' ? 'block' : 'none';">
+                    <option value="no" {% if form_data.food_pairing_q == 'no' or not form_data.food_pairing_q %}selected{% endif %}>No, solo birra!</option>
+                    <option value="yes" {% if form_data.food_pairing_q == 'yes' %}selected{% endif %}>Sì, certo!</option>
+                </select>
+            </div>
+            <div class="form-group" id="food_pairing_text_group" style="display: {% if form_data.food_pairing_q == 'yes' %}block{% else %}none{% endif %};">
+                <label for="food_pairing_text">Grande! Che si mangia?</label>
+                <input type="text" name="food_pairing_text" id="food_pairing_text" value="{{ form_data.food_pairing_text if form_data.food_pairing_text else '' }}" placeholder="Es. Pizza, Hamburger, Grigliata...">
+            </div>
+
+            <div class="form-group">
+                <label for="origin_q">12. Origine: hai in mente un paese o una regione? 🗺️</label>
+                 <select name="origin_q" id="origin_q" onchange="document.getElementById('origin_text_group').style.display = this.value === 'yes' ? 'block' : 'none';">
+                    <option value="any" {% if form_data.origin_q == 'any' or not form_data.origin_q %}selected{% endif %}>🌍 Da tutto il mondo va bene</option>
+                    <option value="yes" {% if form_data.origin_q == 'yes' %}selected{% endif %}>Sì, ho una preferenza!</option>
+                </select>
+            </div>
+             <div class="form-group" id="origin_text_group" style="display: {% if form_data.origin_q == 'yes' %}block{% else %}none{% endif %};">
+                <label for="origin_text">Dimmi un po', che zona ti ispira?</label>
+                <input type="text" name="origin_text" id="origin_text" value="{{ form_data.origin_text if form_data.origin_text else '' }}" placeholder="Es. Belgio, Germania, USA...">
+                 <div class="input-note">Non ho sempre questo dato, ma la speranza è l'ultima a morire!</div>
+            </div>
+
+            <button type="submit">🚀 Trovami la Birra! 🚀</button>
+        </form>
+
+        {% if request.method == 'POST' %}
+            <div class="results-section">
+                <h2>💡 Ecco cosa ho scovato per te:</h2>
+                
+                {% if feedback %}
+                    <div class="feedback-messages">
+                        <h3>Qualche dritta dal tuo Beer Bot:</h3>
+                        {% for msg in feedback %}
+                            <div class="feedback-message">{{ msg }}</div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                {% if suggestions %}
+                    {% for beer in suggestions %}
+                        <div class="beer-card">
+                            {% if beer.image %}
+                                <img src="{{ beer.image }}" alt="Immagine di {{ beer.name | default('Birra Sconosciuta') }}">
+                            {% endif %}
+                            <div class="beer-info">
+                                <h3>{{ beer.name | default('Nome Birra Non Disponibile') }}</h3>
+                                <p><strong>Prezzo:</strong> {{ beer.price | default('N/D') }}</p>
+                                {% if beer.rating and beer.rating.average is not none and beer.rating.average|float != 0 %}
+                                <p><strong>Media Voti:</strong> 🌟 {{ beer.rating.average }} (su {{ beer.rating.reviews | default(0) }} recensioni)</p>
+                                {% else %}
+                                <p><strong>Media Voti:</strong> Dato non pervenuto 🤷</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                     <p style="text-align:center; color: var(--text-muted);">😥 Mannaggia, con questi filtri non ho trovato birre... Prova a cambiare qualcosa!</p>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+<script>
+    // Funzione per mostrare/nascondere campi condizionali
+    function toggleConditionalField(selectId, textGroupId) {
+        var selectElem = document.getElementById(selectId);
+        var textGroupElem = document.getElementById(textGroupId);
+        if (selectElem && textGroupElem) {
+            textGroupElem.style.display = selectElem.value === 'yes' ? 'block' : 'none';
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        // Inizializza lo stato dei campi condizionali al caricamento
+        toggleConditionalField('food_pairing_q', 'food_pairing_text_group');
+        toggleConditionalField('origin_q', 'origin_text_group');
+
+        // Aggiungi event listener per futuri cambiamenti
+        var foodPairingSelect = document.getElementById('food_pairing_q');
+        if (foodPairingSelect) {
+            foodPairingSelect.addEventListener('change', function() {
+                toggleConditionalField('food_pairing_q', 'food_pairing_text_group');
+            });
+        }
+
+        var originPrefSelect = document.getElementById('origin_q');
+        if (originPrefSelect) {
+            originPrefSelect.addEventListener('change', function() {
+                toggleConditionalField('origin_q', 'origin_text_group');
+            });
+        }
+    });
+</script>
+</body>
+</html>

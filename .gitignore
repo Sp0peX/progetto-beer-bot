@@ -1,0 +1,25 @@
+# Ambienti virtuali
+venv/
+*.venv/
+env/
+ENV/
+
+# Cache e file compilati Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# File di configurazione specifici dell'IDE
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# File .env (per variabili d'ambiente segrete, anche se non ne usi ora è buona pratica)
+.env
+*.env
+
+# Eventuali database SQLite locali (se ne aggiungessi in futuro)
+*.sqlite3
