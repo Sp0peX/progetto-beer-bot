@@ -7,132 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --bg-dark: #1a1a2e; /* Blu notte scuro */
-            --card-bg: #1f1f38; /* Un po' più chiaro per le card e form */
-            --text-light: #e0e0e0;
-            --text-muted: #a0a0c0;
-            --accent-cyan: #00ffff;
-            --accent-magenta: #ff00ff;
-            --accent-purple: #9d00ff;
-            --border-color: #3a3a5e;
-        }
-        body {
-            font-family: 'Poppins', sans-serif;
-            margin: 0;
-            background-color: var(--bg-dark);
-            color: var(--text-light);
-            line-height: 1.6;
-        }
-        .container {
-            max-width: 800px;
-            margin: 30px auto;
-            padding: 20px;
-            background-color: var(--card-bg);
-            border-radius: 12px;
-            box-shadow: 0 0 25px rgba(0, 255, 255, 0.1), 0 0 30px rgba(255, 0, 255, 0.1);
-        }
-        header { text-align: center; margin-bottom: 30px; }
-        h1 {
-            font-size: 2.5em;
-            font-weight: 700;
-            background: linear-gradient(90deg, var(--accent-cyan), var(--accent-magenta));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 0.2em;
-        }
-        header p { font-size: 1.1em; color: var(--text-muted); }
-
-        .form-group { margin-bottom: 20px; }
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: var(--accent-cyan);
-        }
-        select, input[type="text"], input[type="number"] {
-            width: 100%;
-            padding: 12px;
-            background-color: var(--bg-dark);
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            box-sizing: border-box;
-            color: var(--text-light);
-            font-size: 1em;
-        }
-        select:focus, input:focus {
-            outline: none;
-            border-color: var(--accent-magenta);
-            box-shadow: 0 0 10px rgba(255, 0, 255, 0.3);
-        }
-        .input-note { font-size: 0.85em; color: var(--text-muted); margin-top: 5px; }
-
-        button[type="submit"] {
-            display: block;
-            width: 100%;
-            background: linear-gradient(90deg, var(--accent-purple), var(--accent-magenta));
-            color: white;
-            padding: 15px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 1.2em;
-            font-weight: 600;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-        button[type="submit"]:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(255, 0, 255, 0.2);
-        }
-
-        .results-section { margin-top: 40px; }
-        .results-section h2 {
-            text-align: center;
-            color: var(--accent-cyan);
-            border-bottom: 2px solid var(--accent-purple);
-            padding-bottom: 10px;
-            margin-bottom: 20px;
-        }
-        .beer-card {
-            background-color: var(--bg-dark);
-            border: 1px solid var(--border-color);
-            padding: 20px;
-            margin-bottom: 20px;
-            border-radius: 8px;
-            display: flex; /* Per allineare immagine e testo */
-            gap: 20px; /* Spazio tra immagine e testo */
-            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-            overflow: hidden; /* Per non far sbordare l'immagine se troppo grande */
-        }
-        .beer-card img {
-            max-width: 100px;
-            max-height: 150px; /* Limita altezza immagine */
-            object-fit: contain; /* Mantiene le proporzioni, non taglia */
-            border-radius: 4px;
-            align-self: center; /* Centra verticalmente l'immagine */
-        }
-        .beer-info { flex-grow: 1; } /* Il testo occupa lo spazio rimanente */
-        .beer-card h3 {
-            margin-top: 0;
-            color: var(--accent-magenta);
-            font-size: 1.4em;
-        }
-        .beer-card p { margin: 5px 0; color: var(--text-muted); }
-        .beer-card strong { color: var(--text-light); }
-
-        .feedback-messages { margin-bottom: 30px; padding: 15px; background-color: rgba(0, 255, 255, 0.05); border-left: 4px solid var(--accent-cyan); border-radius: 4px;}
-        .feedback-messages h3 { margin-top: 0; color: var(--accent-cyan); }
-        .feedback-message { margin-bottom: 8px; color: var(--text-light); }
-
-        /* Responsive */
-        @media (max-width: 600px) {
-            .container { margin: 15px; padding: 15px; }
-            h1 { font-size: 2em; }
-            .beer-card { flex-direction: column; align-items: center; text-align: center; } /* Immagine sopra, testo sotto */
-            .beer-card img { margin-bottom: 15px; max-width: 80%; }
-        }
-    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
     <div class="container">
@@ -243,7 +118,7 @@
 
             <div class="form-group">
                 <label for="food_pairing_q">11. Ci mangi qualcosa insieme? 🍕🍔🥩</label>
-                <select name="food_pairing_q" id="food_pairing_q" onchange="document.getElementById('food_pairing_text_group').style.display = this.value === 'yes' ? 'block' : 'none';">
+                <select name="food_pairing_q" id="food_pairing_q" onchange="toggleConditionalField('food_pairing_q', 'food_pairing_text_group')">
                     <option value="no" {% if form_data.food_pairing_q == 'no' or not form_data.food_pairing_q %}selected{% endif %}>No, solo birra!</option>
                     <option value="yes" {% if form_data.food_pairing_q == 'yes' %}selected{% endif %}>Sì, certo!</option>
                 </select>
@@ -255,7 +130,7 @@
 
             <div class="form-group">
                 <label for="origin_q">12. Origine: hai in mente un paese o una regione? 🗺️</label>
-                 <select name="origin_q" id="origin_q" onchange="document.getElementById('origin_text_group').style.display = this.value === 'yes' ? 'block' : 'none';">
+                 <select name="origin_q" id="origin_q" onchange="toggleConditionalField('origin_q', 'origin_text_group')">
                     <option value="any" {% if form_data.origin_q == 'any' or not form_data.origin_q %}selected{% endif %}>🌍 Da tutto il mondo va bene</option>
                     <option value="yes" {% if form_data.origin_q == 'yes' %}selected{% endif %}>Sì, ho una preferenza!</option>
                 </select>
@@ -269,7 +144,7 @@
             <button type="submit">🚀 Trovami la Birra! 🚀</button>
         </form>
 
-        {% if request.method == 'POST' %}
+        {% if request.method == 'POST' or suggestions or feedback %}
             <div class="results-section">
                 <h2>💡 Ecco cosa ho scovato per te:</h2>
                 
@@ -286,20 +161,23 @@
                     {% for beer in suggestions %}
                         <div class="beer-card">
                             {% if beer.image %}
-                                <img src="{{ beer.image }}" alt="Immagine di {{ beer.name | default('Birra Sconosciuta') }}">
+                                <img src="{{ beer.image }}" alt="Immagine di {{ beer.name | default('Birra Sconosciuta', true) }}">
+                            {% else %}
+                                <img src="https://via.placeholder.com/100x150.png?text=No+Image" alt="Immagine non disponibile">
                             {% endif %}
                             <div class="beer-info">
-                                <h3>{{ beer.name | default('Nome Birra Non Disponibile') }}</h3>
-                                <p><strong>Prezzo:</strong> {{ beer.price | default('N/D') }}</p>
-                                {% if beer.rating and beer.rating.average is not none and beer.rating.average|float != 0 %}
-                                <p><strong>Media Voti:</strong> 🌟 {{ beer.rating.average }} (su {{ beer.rating.reviews | default(0) }} recensioni)</p>
+                                <h3>{{ beer.name | default('Nome Birra Non Disponibile', true) }}</h3>
+                                <p><strong>Prezzo:</strong> {{ beer.price | default('N/D', true) }}</p>
+                                {% set rating_data = beer.get('rating', {}) %}
+                                {% if rating_data and rating_data.average is not none and rating_data.average|float != 0 %}
+                                    <p><strong>Media Voti:</strong> 🌟 {{ "%.1f"|format(rating_data.average|float) }} (su {{ rating_data.reviews | default(0) }} recensioni)</p>
                                 {% else %}
-                                <p><strong>Media Voti:</strong> Dato non pervenuto 🤷</p>
+                                    <p><strong>Media Voti:</strong> Dato non pervenuto 🤷</p>
                                 {% endif %}
                             </div>
                         </div>
                     {% endfor %}
-                {% else %}
+                {% elif request.method == 'POST' %} 
                      <p style="text-align:center; color: var(--text-muted);">😥 Mannaggia, con questi filtri non ho trovato birre... Prova a cambiare qualcosa!</p>
                 {% endif %}
             </div>
@@ -310,7 +188,7 @@
     function toggleConditionalField(selectId, textGroupId) {
         var selectElem = document.getElementById(selectId);
         var textGroupElem = document.getElementById(textGroupId);
-        if (selectElem && textGroupElem) {
+        if (selectElem && textGroupElem) { // Controlla che gli elementi esistano prima di accedere a 'value'
             textGroupElem.style.display = selectElem.value === 'yes' ? 'block' : 'none';
         }
     }
